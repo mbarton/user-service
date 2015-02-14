@@ -1,9 +1,14 @@
 import os
 import os.path
-from flask import Flask, g
-from .db import DB
+
+from flask import Flask, g, request, jsonify, abort
+from flask.ext.bcrypt import Bcrypt
+
+from db import DB
+from users import create_user, get_users, get_user
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 config_file = os.getenv('USER_SERVICE_SETTINGS', 'default_config.py')
 app.config.from_pyfile(config_file)
@@ -15,7 +20,7 @@ db_file = app.config['DATABASE']
 
 @app.before_request
 def before_request():
-    g.db = DB(db_file)
+    g.db = DB(db_file, bcrypt)
 
 @app.teardown_request
 def after_request(err):
@@ -23,16 +28,54 @@ def after_request(err):
     if db is not None:
         db.close()
 
+@app.route('/users', methods = ['GET', 'POST'])
+def users():
+    if request.method == 'POST':
+        print(request.json)
+        pass
+    else:
+        ret = {
+            # jsonfiy renders named tuples without the field names
+            # so we convert to a dictionary to ensure they are in the output
+            "users": [user._asdict() for user in get_users(g.db)]
+        }
+
+        print(ret)
+        return jsonify(**ret)
+
+@app.route('/users/<user_id>', methods = ['GET', 'DELETE'])
+def user(user_id):
+    if request.method == 'DELETE':
+        pass
+    else:
+        user = get_user(g.db, user_id)
+        if user:
+            return jsonify(**user._asdict())
+        else:
+            abort(404)
+
+def create_demo_users(db):
+    demo_users = ['user%s' % n for n in range(0, 10)]
+    app.logger.info('Initialising demo users: %s' % ", ".join(demo_users))
+    for user in demo_users:
+        email = '%s@email.com' % user
+        create_user(db, user, email, user)
+
 def start():
     should_init_db_file = not os.path.isfile(db_file)
 
     # Make sure the DB file has been created and the schema SQL executed
-    db = DB(db_file)
+    db = DB(db_file, bcrypt)
     
     if should_init_db_file:
-        with app.open_resource('schema.sql', mode='r') as schema_sql:
-            db.execute_block(schema_sql)
+        app.logger.info('Initialising %s with database schema' % db_file)
+
+        with app.open_resource('schema.sql', mode='r') as schema_file:
+            db.unsafe_execute_block(schema_file.read())
     
+        if app.config['DEMO_USERS']:
+            create_demo_users(db)
+
     db.close()
 
     app.run()
