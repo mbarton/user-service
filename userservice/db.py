@@ -1,5 +1,8 @@
 import sqlite3
 
+class EntryAlreadyExists(Exception):
+    pass
+
 class DB:
     def __init__(self, db_file, bcrypt):
         self.db = sqlite3.connect(db_file)
@@ -11,9 +14,16 @@ class DB:
         return cursor.fetchall()
 
     def write(self, sql, args):
-        cursor = self.db.cursor()
-        cursor.execute(sql, args)
-        self.db.commit()
+        try:
+            cursor = self.db.cursor()
+            
+            cursor.execute(sql, args)
+            ret = cursor.fetchall()
+            
+            self.db.commit()
+            return ret
+        except sqlite3.IntegrityError:
+            raise EntryAlreadyExists
 
     def unsafe_execute_block(self, sql_block):
         self.db.cursor().executescript(sql_block)

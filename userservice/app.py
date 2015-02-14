@@ -4,8 +4,8 @@ import os.path
 from flask import Flask, g, request, jsonify, abort
 from flask.ext.bcrypt import Bcrypt
 
-from db import DB
-from users import create_user, get_users, get_user
+from db import DB, EntryAlreadyExists
+from users import create_user, get_users, get_user, User, UserCreation
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -28,19 +28,40 @@ def after_request(err):
     if db is not None:
         db.close()
 
+@app.errorhandler(400)
+def bad_request(e):
+    resp = jsonify({ 'message': str(e) })
+    resp.status_code = 400
+    return resp
+
 @app.route('/users', methods = ['GET', 'POST'])
 def users():
     if request.method == 'POST':
-        print(request.json)
-        pass
+        # Return BadRequest rather than InternalServerError if validation fails
+        try:
+            user_request = UserCreation(**request.json)
+        except TypeError:
+            return bad_request('Expected username, email and password. Got %s' % ', '.join(request.json.keys()))
+
+        # Again return BadRequest if the user already exists, otherwise it is a genuine
+        # error that we let the default error handlers deal with
+        try:
+            user_id = create_user(g.db, user_request)
+        except EntryAlreadyExists:
+            return bad_request('User %s already exists' % user_request.username)
+
+        ret = {
+            'user': User(user_id, user_request.username, user_request.email)._asdict()
+        }
+
+        return jsonify(**ret)
     else:
         ret = {
             # jsonfiy renders named tuples without the field names
             # so we convert to a dictionary to ensure they are in the output
-            "users": [user._asdict() for user in get_users(g.db)]
+            'users': [user._asdict() for user in get_users(g.db)]
         }
 
-        print(ret)
         return jsonify(**ret)
 
 @app.route('/users/<user_id>', methods = ['GET', 'DELETE'])
@@ -59,7 +80,7 @@ def create_demo_users(db):
     app.logger.info('Initialising demo users: %s' % ", ".join(demo_users))
     for user in demo_users:
         email = '%s@email.com' % user
-        create_user(db, user, email, user)
+        create_user(db, UserCreation(user, email, user))
 
 def start():
     should_init_db_file = not os.path.isfile(db_file)
