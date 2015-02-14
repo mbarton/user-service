@@ -25,6 +25,11 @@ class DB:
         except sqlite3.IntegrityError:
             raise EntryAlreadyExists
 
+    # Seperate method to signal intention and allow for different exception handling
+    # if required
+    def execute(self, sql, args):
+        return self.write(sql, args)
+
     def unsafe_execute_block(self, sql_block):
         self.db.cursor().executescript(sql_block)
         self.db.commit()

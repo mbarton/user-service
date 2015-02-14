@@ -1,6 +1,8 @@
 import uuid
 from collections import namedtuple
 
+# I tend prefer the use of record-type style values to mutable ActiveRecord-style objects.
+# Of course Python code is not idiomatically immutable and functional so I don't go to crazy with it!
 User = namedtuple('User', 'id, username, email')
 UserCreation = namedtuple('UserCreation', 'username, email, password')
 
@@ -23,3 +25,6 @@ def create_user(db, req):
     db.write('insert into users values(:id, :username, :email, :password)', params)
 
     return user_id
+
+def delete_user(db, user_id):
+    db.execute('delete from users where id = :id', { 'id': user_id })

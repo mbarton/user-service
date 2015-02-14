@@ -5,7 +5,7 @@ from flask import Flask, g, request, jsonify, abort
 from flask.ext.bcrypt import Bcrypt
 
 from db import DB, EntryAlreadyExists
-from users import create_user, get_users, get_user, User, UserCreation
+from users import create_user, get_users, get_user, delete_user, User, UserCreation
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -33,6 +33,24 @@ def bad_request(e):
     resp = jsonify({ 'message': str(e) })
     resp.status_code = 400
     return resp
+
+@app.errorhandler(401)
+def unauthorized(e):
+    resp = jsonify({ 'message': str(e) })
+    resp.status_code = 401
+    return resp
+
+@app.errorhandler(404)
+def not_found(e):
+    resp = jsonify({ 'message': str(e) })
+    resp.status_code = 404
+    return resp
+
+# @app.errorhandler(Exception)
+# def general_error(e):
+#     resp = jsonify({ 'message': str(e) })
+#     resp.status_code = 500
+#     return resp
 
 @app.route('/users', methods = ['GET', 'POST'])
 def users():
@@ -67,7 +85,15 @@ def users():
 @app.route('/users/<user_id>', methods = ['GET', 'DELETE'])
 def user(user_id):
     if request.method == 'DELETE':
-        pass
+        if request.headers.get('foobar') == app.config['VALID_API_KEY']:
+            if get_user(g.db, user_id):
+                delete_user(g.db, user_id)    
+                return jsonify({ "message": "deleted" })
+            else:
+                abort(404)
+        else:
+            return unauthorized('Missing or invalid foobar API key header')
+        
     else:
         user = get_user(g.db, user_id)
         if user:
