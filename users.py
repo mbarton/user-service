@@ -1,8 +1,6 @@
 import uuid
 from collections import namedtuple
 
-# I tend prefer the use of record-type style values to mutable ActiveRecord-style objects.
-# Of course Python code is not idiomatically immutable and functional so I don't go to crazy with it!
 User = namedtuple('User', 'id, username, email')
 UserCreation = namedtuple('UserCreation', 'username, email, password')
 
@@ -28,3 +26,16 @@ def create_user(db, req):
 
 def delete_user(db, user_id):
     db.execute('delete from users where id = :id', { 'id': user_id })
+
+#############################################################
+
+def create_demo_users(db, app):
+    demo_users = ['user%s' % n for n in range(0, 10)]
+    app.logger.info('Initialising demo users: %s' % ", ".join(demo_users))
+    for user in demo_users:
+        email = '%s@email.com' % user
+        create_user(db, UserCreation(user, email, user))
+
+def init_db(db, app):
+    with app.open_resource('schema.sql', mode='r') as schema_file:
+        db.unsafe_execute_block(schema_file.read())
