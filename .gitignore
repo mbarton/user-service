@@ -57,6 +57,9 @@ target/
 bin/*
 include/*
 
+# pip
+pip-selfcheck.json
+
 # Sphinx
 doc/_build/*
 

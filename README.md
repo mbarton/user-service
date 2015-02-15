@@ -6,7 +6,7 @@ Quick Start
 
 **Installing dependencies**:
 
-	pip install -f requirements.txt
+	pip install -r requirements.txt
 
 - I used a `virtualenv` as well: https://virtualenv.pypa.io/en/latest/userguide.html#usage
 
