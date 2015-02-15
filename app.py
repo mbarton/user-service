@@ -69,7 +69,7 @@ def users_endpoint():
         try:
             user_id = users.create_user(g.db, user_request)
         except EntryAlreadyExists:
-            return bad_request('User %s already exists' % user_request.username)
+            return bad_request('Username or email already taken')
 
         ret = User(user_id, user_request.username, user_request.email)._asdict()
         return jsonify(**ret)

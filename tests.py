@@ -42,14 +42,14 @@ class UserTest(unittest.TestCase):
         return json.loads(raw_resp.data)
 
     def test_create_user(self):
-        user_json = json.dumps({'username': 'test_user', 'email': 'test@test.com', 'password': '1234'})
+        user_json = json.dumps({'username': 'test_user', 'email': 'test1@test.com', 'password': '1234'})
 
         headers = [('Content-Type', 'application/json')]
         raw_resp = self.app.post('/users', headers = headers, data = user_json)
         resp = json.loads(raw_resp.data)
 
         self.assertEquals('test_user', resp['username'])
-        self.assertEquals('test@test.com', resp['email'])
+        self.assertEquals('test1@test.com', resp['email'])
         self.assertIn('id', resp)
         self.assertNotIn('password', resp)
 
@@ -98,10 +98,20 @@ class UserTest(unittest.TestCase):
         resp = json.loads(raw_resp.data)
 
         self.assertEquals(400, raw_resp.status_code)
-        self.assertEquals('User user1 already exists', resp['message'])
+        self.assertEquals('Username or email already taken', resp['message'])
+
+    def test_fail_creating_user_with_existing_email(self):
+        user_json = json.dumps({'username': 'user2', 'email': test_users[0]['email'], 'password': '1234'})
+
+        headers = [('Content-Type', 'application/json')]
+        raw_resp = self.app.post('/users', headers = headers, data = user_json)
+        resp = json.loads(raw_resp.data)
+
+        self.assertEquals(400, raw_resp.status_code)
+        self.assertEquals('Username or email already taken', resp['message'])
 
     def test_fail_creating_user_with_missing_fields(self):
-        user_json = json.dumps({'email': 'test@test.com', 'password': '1234'})
+        user_json = json.dumps({'email': 'test5@test.com', 'password': '1234'})
 
         headers = [('Content-Type', 'application/json')]
         raw_resp = self.app.post('/users', headers = headers, data = user_json)

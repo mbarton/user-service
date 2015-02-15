@@ -1,6 +1,32 @@
 user-service
 ============
 
+Quick Start
+-----------
+
+**Installing dependencies**:
+	- `pip install -f requirements.txt`
+	- I used a `virtualenv` as well: https://virtualenv.pypa.io/en/latest/userguide.html#usage
+
+**Running the app**:
+	- `python app.py`
+	- The database is created in `/tmp/user-service.db` and populated with some example users
+	- App configuration is listed in `default_config.py`.
+	- Point the environment variable `USER_SERVICE_SETTINGS` to your own copy of `default_config.py` to change configuration.
+
+**Running the tests**:
+	- `python tests.py`
+
+**Building the documentation**:
+	- `cd doc; make html`
+	- Sphinx must be installed (it is not in requirements.txt since it is only required for docs)
+	- `pip install sphinx`
+	- In addition, the Sphinx HTTP doc extension is required:
+	- `pip install sphinxcontrib-httpdomain`
+
+Design Notes
+------------
+
 - Because of the relatively constrained nature of the task I decided to use Flask and SQLite directly rather depend on an ORM or a framework like Flask-RESTful or Flask-Restless.
 
 - I added an UUID for users independent of the username they selected
@@ -21,15 +47,3 @@ user-service
 TODO:
 	- pydoc
 	- API docs
-
-Test cases
-	- Create users
-	- List users
-	- List user
-	- Delete user
-
-	- Create user with existing username
-	- Create user with missing fields
-	- List user that doesn't exist
-	- Delete user that doesn't exist
-	- Delete user without API key

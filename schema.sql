@@ -7,4 +7,5 @@ create table users (
 	password text not null
 );
 
-create unique index user_index on users(username);
+create unique index username_index on users(username);
+create unique index email_index on users(email);

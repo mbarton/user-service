@@ -57,3 +57,6 @@ target/
 bin/*
 include/*
 
+# Sphinx
+doc/_build/*
+
